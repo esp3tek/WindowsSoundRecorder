@@ -9,13 +9,15 @@ WASAPI loopback, **never the microphone**.
 
 Useful for capturing whatever is playing on your PC: streaming audio, video
 call output, in-app sounds, music, web players, game audio, and similar — with
-no virtual cable or driver to install.
+no virtual cable or driver to install. It's also a simple way to save audio
+from **YouTube, Spotify or any other player as an MP3** — just press Record
+(or tick Autostart) while it plays.
 
 ## Download
 
-Grab the pre-built executable straight from the repository:
+Grab the pre-built executable from the [latest GitHub release](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest):
 
-**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/raw/main/WindowsSoundRecorder.exe)** (~55 KB, no installer).
+**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest/download/WindowsSoundRecorder.exe)** (~55 KB, no installer).
 
 Just double-click to run.
 
