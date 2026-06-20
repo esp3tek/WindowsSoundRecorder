@@ -9,6 +9,10 @@
 *.exp
 *.lib
 
+# Screenshots
+*.png
+!window.png
+
 # OS junk
 Thumbs.db
 desktop.ini
