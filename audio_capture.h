@@ -8,6 +8,7 @@
 #define WM_APP_STATE    (WM_APP + 2)
 #define STATE_WAITING   0
 #define STATE_RECORDING 1
+#define WM_APP_SAVED    (WM_APP + 3)   /* wParam = wchar_t* (path; el receptor hace free) */
 
 typedef enum { CAPTURE_MANUAL, CAPTURE_AUTOSTART } CaptureMode;
 

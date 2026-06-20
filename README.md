@@ -2,8 +2,8 @@
 
 ![Windows Sound Recorder window](window.png)
 
-Tiny Windows utility (~1,000 lines of C, no dependencies, no installer, single
-~72 KB `.exe`) that records **the sound Windows plays** — the system audio
+Tiny Windows utility (~1,300 lines of C, no dependencies, no installer, single
+~83 KB `.exe`) that records **the sound Windows plays** — the system audio
 output — to a `.wav` or `.mp3` file. It captures the speaker/output mix via
 WASAPI loopback, **never the microphone**.
 
@@ -17,7 +17,7 @@ from **YouTube, Spotify or any other player as an MP3** — just press Record
 
 Grab the pre-built executable from the [latest GitHub release](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest):
 
-**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest/download/WindowsSoundRecorder.exe)** (~72 KB, no installer).
+**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest/download/WindowsSoundRecorder.exe)** (~83 KB, no installer).
 
 Just double-click to run.
 
@@ -26,7 +26,7 @@ Just double-click to run.
 Current build SHA-256:
 
 ```
-8A3CE85F142478E2BDEF925F01DD7B2ED593D25FBE744B1C086DD13777FCBC1A
+66ECA850228AEE8C41E5ED41FB6FE4554768068999D4F2BF47B70B326891C663
 ```
 
 On Windows: `Get-FileHash WindowsSoundRecorder.exe -Algorithm SHA256`
@@ -57,6 +57,17 @@ It waits silently, starts recording the moment it detects sound on the
 output, and stops automatically after **5 seconds of silence** — the trailing
 silence is not written to the file — then re-arms for the next sound. Short
 pauses inside a track (under 5 s) are kept. Untick the box to stop/disarm.
+
+### Identify song (AudD)
+
+Tick **Identify song (AudD)** to auto-name recordings. When a recording finishes, a short
+clip is sent to the [AudD](https://audd.io/) music-recognition service; if it recognises
+the track, the file is renamed to `Artist - Title.ext` and (for MP3) ID3 tags are written.
+The first time you enable it, the app asks for your AudD API token (free at audd.io) and
+stores it in the Windows registry.
+
+> **Privacy:** with this option enabled, a short clip of the recorded audio is uploaded to
+> AudD's servers over the internet. With it off, the app makes no network connections.
 
 Minimize the window to send it to the system tray. Left-click the tray icon
 to restore; right-click for `Show` / `Exit`. Only one instance runs at a time.
@@ -96,7 +107,13 @@ Manual MinGW build:
 
 ```
 windres resources.rc -O coff -o resources.o
-gcc sound_recorder.c audio_capture.c wav.c encoder.c audio_util.c mp3_encoder.c resources.o -o WindowsSoundRecorder.exe -municode -mwindows -lole32 -luser32 -lgdi32 -lshell32 -luuid -lmfplat -lmf -lmfreadwrite -lmfuuid -s -O2
+gcc sound_recorder.c audio_capture.c wav.c encoder.c audio_util.c mp3_encoder.c tags.c identify.c resources.o -o WindowsSoundRecorder.exe -municode -mwindows -lole32 -luser32 -lgdi32 -lshell32 -luuid -lmfplat -lmf -lmfreadwrite -lmfuuid -lwinhttp -ladvapi32 -s -O2
+```
+
+Run the unit tests (sanitize, ID3v2 builder, AudD JSON parser, WAV clip):
+
+```
+build_test.bat
 ```
 
 ## License

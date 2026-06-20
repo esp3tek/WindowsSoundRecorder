@@ -24,6 +24,7 @@ struct CaptureSession {
     CaptureMode   mode;
     AudioFormat   fmt;
     wchar_t       folder[MAX_PATH];
+    wchar_t       cur_path[MAX_PATH];   /* path del archivo abierto actualmente */
     HANDLE        ready;
     BOOL          start_ok;
     wchar_t       err[256];
@@ -38,11 +39,19 @@ static void notify(CaptureSession *s, WPARAM state) {
     if (s->notify_hwnd) PostMessage(s->notify_hwnd, WM_APP_STATE, state, 0);
 }
 
+/* Notifica a la UI el path del archivo recién cerrado (la UI hace free del duplicado). */
+static void notify_saved(CaptureSession *s) {
+    if (s->notify_hwnd && s->cur_path[0]) {
+        wchar_t *copy = _wcsdup(s->cur_path);
+        if (copy) PostMessage(s->notify_hwnd, WM_APP_SAVED, (WPARAM)copy, 0);
+    }
+    s->cur_path[0] = L'\0';
+}
+
 static Encoder *open_take(CaptureSession *s, WORD ch, DWORD rate) {
-    wchar_t path[MAX_PATH];
     const wchar_t *ext = (s->fmt == FORMAT_MP3) ? L"mp3" : L"wav";
-    build_output_path(s->folder, ext, path, MAX_PATH);
-    return encoder_open(path, s->fmt, ch, rate, s->err, 256);
+    build_output_path(s->folder, ext, s->cur_path, MAX_PATH);
+    return encoder_open(s->cur_path, s->fmt, ch, rate, s->err, 256);
 }
 
 static DWORD WINAPI capture_proc(LPVOID param) {
@@ -114,6 +123,7 @@ static DWORD WINAPI capture_proc(LPVOID param) {
             encoder_close(enc); enc = NULL;
             hold_used = 0;
             state = STATE_WAITING;
+            notify_saved(s);
             notify(s, STATE_WAITING);
         }
 
@@ -172,7 +182,7 @@ static DWORD WINAPI capture_proc(LPVOID param) {
     }
 
     IAudioClient_Stop(client);
-    if (enc) { encoder_close(enc); enc = NULL; }
+    if (enc) { encoder_close(enc); enc = NULL; notify_saved(s); }
     goto cleanup;
 
 fail:
