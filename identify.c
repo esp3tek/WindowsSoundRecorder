@@ -135,12 +135,23 @@ BOOL identify_song(const wchar_t *audio_path, const char *api_key,
 
     const char *bnd = "----wsrAudDBoundary7f3a";
     char head[1024];
-    int hl = snprintf(head, sizeof(head),
-        "--%s\r\nContent-Disposition: form-data; name=\"api_token\"\r\n\r\n%s\r\n"
-        "--%s\r\nContent-Disposition: form-data; name=\"return\"\r\n\r\nspotify,apple_music\r\n"
-        "--%s\r\nContent-Disposition: form-data; name=\"file\"; filename=\"audio\"\r\n"
-        "Content-Type: application/octet-stream\r\n\r\n",
-        bnd, api_key, bnd, bnd);
+    int hl;
+    if (api_key && api_key[0]) {
+        /* Con token: incluir el campo api_token. */
+        hl = snprintf(head, sizeof(head),
+            "--%s\r\nContent-Disposition: form-data; name=\"api_token\"\r\n\r\n%s\r\n"
+            "--%s\r\nContent-Disposition: form-data; name=\"return\"\r\n\r\nspotify,apple_music\r\n"
+            "--%s\r\nContent-Disposition: form-data; name=\"file\"; filename=\"audio\"\r\n"
+            "Content-Type: application/octet-stream\r\n\r\n",
+            bnd, api_key, bnd, bnd);
+    } else {
+        /* Sin token: AudD usa el tier gratuito (~10/día). */
+        hl = snprintf(head, sizeof(head),
+            "--%s\r\nContent-Disposition: form-data; name=\"return\"\r\n\r\nspotify,apple_music\r\n"
+            "--%s\r\nContent-Disposition: form-data; name=\"file\"; filename=\"audio\"\r\n"
+            "Content-Type: application/octet-stream\r\n\r\n",
+            bnd, bnd);
+    }
     char tail[64];
     int tl = snprintf(tail, sizeof(tail), "\r\n--%s--\r\n", bnd);
 

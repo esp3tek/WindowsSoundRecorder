@@ -26,7 +26,7 @@ Just double-click to run.
 Current build SHA-256:
 
 ```
-66ECA850228AEE8C41E5ED41FB6FE4554768068999D4F2BF47B70B326891C663
+F0FA9EEB982FB5565E8EAD1B7E8AA366F6E6AD5C23AB841F4BFA7A1C7A4DEE70
 ```
 
 On Windows: `Get-FileHash WindowsSoundRecorder.exe -Algorithm SHA256`
@@ -64,7 +64,8 @@ Tick **Identify song (AudD)** to auto-name recordings. When a recording finishes
 clip is sent to the [AudD](https://audd.io/) music-recognition service; if it recognises
 the track, the file is renamed to `Artist - Title.ext` and (for MP3) ID3 tags are written.
 The first time you enable it, the app asks for your AudD API token (free at audd.io) and
-stores it in the Windows registry.
+stores it in the Windows registry. You can also **leave it empty to use AudD's free tier**
+(about 10 songs/day, no account needed).
 
 > **Privacy:** with this option enabled, a short clip of the recorded audio is uploaded to
 > AudD's servers over the internet. With it off, the app makes no network connections.

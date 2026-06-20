@@ -256,11 +256,14 @@ static void tray_show_menu(HWND hwnd) {
 }
 
 /* ----- AudD: registro de la API key ----- */
+/* Devuelve TRUE si la opción ya está configurada (el valor existe en el registro,
+ * aunque sea vacío = "usar el tier gratuito"). `buf` recibe la key (vacía si gratis). */
 static BOOL load_api_key(char *buf, DWORD len) {
     DWORD type = 0, sz = len;
+    buf[0] = '\0';
     LONG r = RegGetValueA(HKEY_CURRENT_USER, "Software\\WindowsSoundRecorder",
                           "AudDKey", RRF_RT_REG_SZ, &type, buf, &sz);
-    return r == ERROR_SUCCESS && buf[0] != '\0';
+    return r == ERROR_SUCCESS;
 }
 
 static void save_api_key(const char *key) {
@@ -280,20 +283,22 @@ static LRESULT CALLBACK keydlg_proc(HWND h, UINT m, WPARAM wp, LPARAM lp) {
     switch (m) {
     case WM_CREATE:
         CreateWindow(L"STATIC",
-            L"Enter your AudD API token (get one free at audd.io):",
-            WS_CHILD | WS_VISIBLE, S(12), S(10), S(360), S(18), h, NULL, NULL, NULL);
+            L"AudD API token (get one free at audd.io).\r\n"
+            L"Leave it empty to use the free tier (about 10 songs/day).",
+            WS_CHILD | WS_VISIBLE, S(12), S(10), S(372), S(36), h, NULL, NULL, NULL);
         CreateWindow(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-            S(12), S(34), S(360), S(24), h, (HMENU)201, NULL, NULL);
+            S(12), S(52), S(372), S(24), h, (HMENU)201, NULL, NULL);
         CreateWindow(L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
-            S(196), S(70), S(84), S(28), h, (HMENU)IDOK, NULL, NULL);
+            S(208), S(88), S(84), S(28), h, (HMENU)IDOK, NULL, NULL);
         CreateWindow(L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE,
-            S(288), S(70), S(84), S(28), h, (HMENU)IDCANCEL, NULL, NULL);
+            S(300), S(88), S(84), S(28), h, (HMENU)IDCANCEL, NULL, NULL);
         EnumChildWindows(h, set_font_cb, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));
         return 0;
     case WM_COMMAND:
         if (LOWORD(wp) == IDOK) {
+            /* OK siempre acepta: con texto = usar esa key; vacío = usar el tier gratuito. */
             GetWindowText(GetDlgItem(h, 201), g_keydlg_result, 128);
-            g_keydlg_ok = (g_keydlg_result[0] != L'\0');
+            g_keydlg_ok = TRUE;
             DestroyWindow(h);
         } else if (LOWORD(wp) == IDCANCEL) {
             g_keydlg_ok = FALSE;
@@ -321,7 +326,7 @@ static BOOL ask_api_key(HWND owner, wchar_t *out, size_t len) {
     RECT pr; GetWindowRect(owner, &pr);
     HWND dlg = CreateWindow(CLS, L"AudD API token",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-        pr.left + S(40), pr.top + S(60), S(400), S(150),
+        pr.left + S(40), pr.top + S(60), S(412), S(168),
         owner, NULL, wc.hInstance, NULL);
     EnableWindow(owner, FALSE);
     ShowWindow(dlg, SW_SHOW);
