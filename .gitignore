@@ -1,0 +1,17 @@
+# Build artifacts
+*.exe
+!WindowsSoundRecorder.exe
+*.obj
+*.o
+*.res
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# OS junk
+Thumbs.db
+desktop.ini
+
+# Internal design docs (not part of the shipped utility)
+docs/
