@@ -1,7 +1,8 @@
-# Genera icon.ico con un círculo rojo de "grabación" en 16x16, 32x32 y 48x48.
+# Genera icon.ico: un punto de grabación rojo, en varios tamaños (16..256) para verse
+# nítido en la barra de tareas y la bandeja del sistema.
 Add-Type -AssemblyName System.Drawing
 
-$sizes = 16, 32, 48
+$sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
 $pngStreams = @()
 
 foreach ($s in $sizes) {
@@ -9,10 +10,29 @@ foreach ($s in $sizes) {
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = 'AntiAlias'
     $g.Clear([System.Drawing.Color]::Transparent)
-    $pad = [Math]::Max(1, [int]($s * 0.18))
-    $d = $s - 2 * $pad
-    $brush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(220, 40, 40))
-    $g.FillEllipse($brush, $pad, $pad, $d, $d)
+
+    # Punto de grabación rojo centrado, con un sutil gradiente vertical.
+    [single]$dia = $s * 0.62
+    [single]$x = ($s - $dia) / 2.0
+    [single]$y = ($s - $dia) / 2.0
+
+    $rect = New-Object System.Drawing.RectangleF($x, $y, $dia, $dia)
+    $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        $rect,
+        [System.Drawing.Color]::FromArgb(255, 90, 70),
+        [System.Drawing.Color]::FromArgb(205, 0, 0),
+        90.0)
+    $g.FillEllipse($grad, $rect)
+    $grad.Dispose()
+
+    # Borde blanco fino para contraste sobre fondos oscuros o claros.
+    if ($s -ge 24) {
+        [single]$penW = [Math]::Max(1.0, $s * 0.05)
+        $white = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(235, 255, 255, 255), $penW)
+        $g.DrawEllipse($white, $rect)
+        $white.Dispose()
+    }
+
     $g.Dispose()
     $ms = New-Object System.IO.MemoryStream
     $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -20,7 +40,7 @@ foreach ($s in $sizes) {
     $bmp.Dispose()
 }
 
-# Construir el contenedor .ico manualmente (cada imagen embebida como PNG).
+# Empaquetar el contenedor .ico (cada imagen embebida como PNG).
 $out = New-Object System.IO.MemoryStream
 $bw = New-Object System.IO.BinaryWriter($out)
 $bw.Write([UInt16]0)            # reserved
@@ -44,4 +64,4 @@ for ($i = 0; $i -lt $sizes.Count; $i++) {
 foreach ($data in $pngStreams) { $bw.Write($data) }
 $bw.Flush()
 [System.IO.File]::WriteAllBytes("$PSScriptRoot\icon.ico", $out.ToArray())
-Write-Host "icon.ico generado."
+Write-Host "icon.ico generado ($($sizes.Count) tamanos)."

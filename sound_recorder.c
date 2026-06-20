@@ -42,6 +42,8 @@ static DWORD g_elapsed    = 0;   /* segundos */
 static CaptureSession *g_session = NULL;
 static HWND g_wav_radio = NULL, g_mp3_radio = NULL, g_autostart = NULL;
 static BOOL g_autostart_on = FALSE;
+static int g_dpi = 96;            /* DPI efectivo; los controles se escalan con S() */
+#define S(x) MulDiv((x), g_dpi, 96)
 
 /* Rellena `dst` con la ruta del Escritorio del usuario. */
 static void get_desktop_path(wchar_t *dst, size_t len) {
@@ -160,49 +162,51 @@ static void disarm_autostart(HWND hwnd) {
     SetWindowText(g_status, L"Ready");
 }
 
+static BOOL CALLBACK set_font_cb(HWND child, LPARAM font) {
+    SendMessage(child, WM_SETFONT, (WPARAM)font, TRUE);
+    return TRUE;
+}
+
 static void create_controls(HWND hwnd, HINSTANCE hInst) {
     CreateWindow(L"STATIC", L"Save folder:",
-        WS_CHILD | WS_VISIBLE, 12, 12, 200, 18, hwnd, NULL, hInst, NULL);
+        WS_CHILD | WS_VISIBLE, S(12), S(12), S(200), S(18), hwnd, NULL, hInst, NULL);
 
     g_path_edit = CreateWindow(L"EDIT", L"",
         WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-        12, 32, 290, 24, hwnd, (HMENU)IDC_PATH, hInst, NULL);
+        S(12), S(32), S(290), S(24), hwnd, (HMENU)IDC_PATH, hInst, NULL);
 
     CreateWindow(L"BUTTON", L"Browse...",
-        WS_CHILD | WS_VISIBLE, 310, 32, 90, 24, hwnd, (HMENU)IDC_BROWSE, hInst, NULL);
+        WS_CHILD | WS_VISIBLE, S(310), S(32), S(90), S(24), hwnd, (HMENU)IDC_BROWSE, hInst, NULL);
 
     CreateWindow(L"STATIC", L"Format:",
-        WS_CHILD | WS_VISIBLE, 12, 70, 60, 18, hwnd, NULL, hInst, NULL);
+        WS_CHILD | WS_VISIBLE, S(12), S(70), S(60), S(18), hwnd, NULL, hInst, NULL);
 
     g_wav_radio = CreateWindow(L"BUTTON", L"WAV",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
-        78, 68, 70, 22, hwnd, (HMENU)IDC_FMT_WAV, hInst, NULL);
+        S(78), S(68), S(70), S(22), hwnd, (HMENU)IDC_FMT_WAV, hInst, NULL);
 
     g_mp3_radio = CreateWindow(L"BUTTON", L"MP3 320 kbps",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        158, 68, 130, 22, hwnd, (HMENU)IDC_FMT_MP3, hInst, NULL);
+        S(158), S(68), S(130), S(22), hwnd, (HMENU)IDC_FMT_MP3, hInst, NULL);
 
     SendMessage(g_wav_radio, BM_SETCHECK, BST_CHECKED, 0);
 
     g_autostart = CreateWindow(L"BUTTON", L"Autostart (record on sound; stop after 5 s silence)",
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-        12, 98, 410, 22, hwnd, (HMENU)IDC_AUTOSTART, hInst, NULL);
+        S(12), S(98), S(410), S(22), hwnd, (HMENU)IDC_AUTOSTART, hInst, NULL);
 
     g_record_btn = CreateWindow(L"BUTTON", L"Record",
         WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
-        12, 128, 410, 40, hwnd, (HMENU)IDC_RECORD, hInst, NULL);
+        S(12), S(128), S(410), S(40), hwnd, (HMENU)IDC_RECORD, hInst, NULL);
 
     g_status = CreateWindow(L"STATIC", L"Ready",
         WS_CHILD | WS_VISIBLE | SS_CENTER,
-        12, 178, 410, 22, hwnd, (HMENU)IDC_STATUS, hInst, NULL);
+        S(12), S(178), S(410), S(22), hwnd, (HMENU)IDC_STATUS, hInst, NULL);
 
-    HFONT font = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
-    SendMessage(g_path_edit,  WM_SETFONT, (WPARAM)font, TRUE);
-    SendMessage(g_wav_radio,  WM_SETFONT, (WPARAM)font, TRUE);
-    SendMessage(g_mp3_radio,  WM_SETFONT, (WPARAM)font, TRUE);
-    SendMessage(g_autostart,  WM_SETFONT, (WPARAM)font, TRUE);
-    SendMessage(g_record_btn, WM_SETFONT, (WPARAM)font, TRUE);
-    SendMessage(g_status,     WM_SETFONT, (WPARAM)font, TRUE);
+    HFONT font = CreateFontW(-MulDiv(9, g_dpi, 72), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+        DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    EnumChildWindows(hwnd, set_font_cb, (LPARAM)font);
 
     wchar_t desktop[MAX_PATH];
     get_desktop_path(desktop, MAX_PATH);
@@ -216,7 +220,9 @@ static void tray_add(HWND hwnd, HINSTANCE hInst) {
     g_nid.uID    = 1;
     g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAYICON;
-    g_nid.hIcon  = LoadIcon(hInst, MAKEINTRESOURCE(1));
+    g_nid.hIcon  = (HICON)LoadImage(hInst, MAKEINTRESOURCE(1), IMAGE_ICON,
+                                    GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+                                    LR_DEFAULTCOLOR);
     wcscpy(g_nid.szTip, L"Windows Sound Recorder");
     Shell_NotifyIcon(NIM_ADD, &g_nid);
     g_tray_added = TRUE;
@@ -327,6 +333,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmd, int show) {
     (void)hPrev; (void)cmd;
 
+    /* Nitidez en pantallas con escalado: la ventana se renderiza a resolución real. */
+    SetProcessDPIAware();
+    HDC sdc = GetDC(NULL);
+    g_dpi = GetDeviceCaps(sdc, LOGPIXELSX);
+    ReleaseDC(NULL, sdc);
+
     HANDLE mutex = CreateMutex(NULL, TRUE, MUTEX_NAME);
     if (mutex && GetLastError() == ERROR_ALREADY_EXISTS) {
         HWND existing = FindWindow(CLASS_NAME, NULL);
@@ -338,20 +350,30 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmd, int show) {
         return 0;
     }
 
-    WNDCLASS wc = {0};
+    HICON icon_big = (HICON)LoadImage(hInst, MAKEINTRESOURCE(1), IMAGE_ICON,
+        GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR);
+    HICON icon_sm  = (HICON)LoadImage(hInst, MAKEINTRESOURCE(1), IMAGE_ICON,
+        GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+
+    WNDCLASSEX wc = {0};
+    wc.cbSize        = sizeof(wc);
     wc.lpfnWndProc   = WndProc;
     wc.hInstance     = hInst;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-    wc.hIcon         = LoadIcon(hInst, MAKEINTRESOURCE(1));
-    RegisterClass(&wc);
+    wc.hIcon         = icon_big;
+    wc.hIconSm       = icon_sm;
+    RegisterClassEx(&wc);
 
     HWND hwnd = CreateWindow(CLASS_NAME, WINDOW_TITLE,
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 448, 258,
+        CW_USEDEFAULT, CW_USEDEFAULT, S(448), S(258),
         NULL, NULL, hInst, NULL);
     if (!hwnd) return 1;
+
+    SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)icon_big);
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)icon_sm);
 
     ShowWindow(hwnd, show);
     UpdateWindow(hwnd);

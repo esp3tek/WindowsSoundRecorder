@@ -2,8 +2,8 @@
 
 ![Windows Sound Recorder window](window.png)
 
-Tiny Windows utility (~950 lines of C, no dependencies, no installer, single
-~55 KB `.exe`) that records **the sound Windows plays** — the system audio
+Tiny Windows utility (~1,000 lines of C, no dependencies, no installer, single
+~72 KB `.exe`) that records **the sound Windows plays** — the system audio
 output — to a `.wav` or `.mp3` file. It captures the speaker/output mix via
 WASAPI loopback, **never the microphone**.
 
@@ -17,7 +17,7 @@ from **YouTube, Spotify or any other player as an MP3** — just press Record
 
 Grab the pre-built executable from the [latest GitHub release](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest):
 
-**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest/download/WindowsSoundRecorder.exe)** (~55 KB, no installer).
+**[WindowsSoundRecorder.exe](https://github.com/esp3tek/WindowsSoundRecorder/releases/latest/download/WindowsSoundRecorder.exe)** (~72 KB, no installer).
 
 Just double-click to run.
 
@@ -26,7 +26,7 @@ Just double-click to run.
 Current build SHA-256:
 
 ```
-B0D9321E9D6EA3E3EE43F35C966B158870F7642151F3A9822E829D79203E7132
+8A3CE85F142478E2BDEF925F01DD7B2ED593D25FBE744B1C086DD13777FCBC1A
 ```
 
 On Windows: `Get-FileHash WindowsSoundRecorder.exe -Algorithm SHA256`
@@ -97,12 +97,6 @@ Manual MinGW build:
 ```
 windres resources.rc -O coff -o resources.o
 gcc sound_recorder.c audio_capture.c wav.c encoder.c audio_util.c mp3_encoder.c resources.o -o WindowsSoundRecorder.exe -municode -mwindows -lole32 -luser32 -lgdi32 -lshell32 -luuid -lmfplat -lmf -lmfreadwrite -lmfuuid -s -O2
-```
-
-Run the unit tests (WAV header, float→PCM16, peak meter, filename builder):
-
-```
-build_test.bat
 ```
 
 ## License
